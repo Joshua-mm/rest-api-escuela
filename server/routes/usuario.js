@@ -75,7 +75,7 @@ app.get('/usuario', [verificaToken], (req, res) => {
 // Crear un nuevo alumno
 // ------------------------------
 
-app.post('/usuario', [verificaToken, verificaAdminRole], (req, res) => {
+app.post('/usuario', (req, res) => {
 
     let body = req.body;
 
