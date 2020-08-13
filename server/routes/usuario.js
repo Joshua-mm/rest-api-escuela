@@ -75,21 +75,26 @@ app.get('/usuario', [verificaToken], (req, res) => {
 // Crear un nuevo alumno
 // ------------------------------
 
-app.post('/usuario', (req, res) => {
+app.post('/usuario', [verificaToken, verificaAdminRole], (req, res) => {
 
     let body = req.body;
+
+    let fecha = new Date(body.fecha_inscripcion).toISOString().substring(0, 10);
+
+    let fecha_si = fecha.split('-').join('');
 
     usuario = new Usuario({
         nombre: body.nombre,
         matricula: body.matricula,
         edad: body.edad,
-        fecha_inscripcion: body.fecha_inscripcion,
+        fecha_inscripcion: fecha_si,
         direccion: body.direccion,
         numero: body.numero,
         numero_tutor: body.numero_tutor,
         nombre_tutor: body.nombre_tutor,
         pago_mensual: body.pago_mensual,
-        password: body.password, //bcrypt.hashSync(body.password, 10),
+        mensualidad_pagada: body.mensualidad_pagada,
+        password: body.matricula + fecha_si, //bcrypt.hashSync(body.password, 10),
         estado: body.estado,
         role: body.role
     });
@@ -120,7 +125,7 @@ app.put('/usuario', verificaToken, (req, res) => {
 
     let body = req.body;
 
-    let update = _.pick(body, ['nombre', 'edad', 'direccion', 'numero', 'numero_tutor', 'nombre_tutor', 'pago_mensual', 'estado']);
+    let update = _.pick(body, ['password']);
 
     Usuario.findByIdAndUpdate(usuario_id, update, { new: true, runValidators: true }, (err, usuario) => {
         if (err) {
@@ -156,6 +161,7 @@ app.put('/usuario/:id', [verificaToken, verificaAdminRole], (req, res) => {
         numero_tutor: body.numero_tutor,
         nombre_tutor: body.nombre_tutor,
         pago_mensual: body.pago_mensual,
+        mensulidad_pagada: body.mensualidad_pagada,
         password: body.password, //bcrypt.hashSync(body.password, 10),
         estado: body.estado,
         role: body.role

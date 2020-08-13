@@ -17,6 +17,7 @@ let usuarioSchema = new Schema({
     numero_tutor: { type: Number, required: [true, 'El número telefónico del tutor es necesario'] },
     nombre_tutor: { type: String, required: [true, 'El nombre del tutor es necesario'] },
     pago_mensual: { type: Number, required: [true, 'El pago mensual del alumno es necesario'], },
+    mensualidad_pagada: { type: Boolean, required: true },
     password: { type: String, required: [true, 'La contraseña es necesaria'] },
     estado: { type: Boolean, required: true, default: true },
     role: { type: String, required: true, default: 'ALUMNO', enum: rolesValidos }
