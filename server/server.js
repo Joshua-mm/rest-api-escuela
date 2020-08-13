@@ -18,6 +18,7 @@ app.use(bodyParser.json());
 // Rutas
 
 app.use(require('./routes/usuario'));
+app.use(require('./routes/login'));
 
 /// Configs
 
@@ -25,7 +26,8 @@ require('./config/config');
 
 // Implementación base de datos
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/escuela', {
+
+mongoose.connect(process.env.URLDB, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }, (err, res) => {
