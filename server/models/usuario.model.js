@@ -20,7 +20,8 @@ let usuarioSchema = new Schema({
     mensualidad_pagada: { type: Boolean, required: true },
     password: { type: String, required: [true, 'La contraseña es necesaria'] },
     estado: { type: Boolean, required: true, default: true },
-    role: { type: String, required: true, default: 'ALUMNO', enum: rolesValidos }
+    role: { type: String, required: true, default: 'ALUMNO', enum: rolesValidos },
+    salas: { type: [{ id_sala: Schema.Types.ObjectId }], ref: 'Room', required: false }
 });
 
 /* usuarioSchema.methods.toJSON = function() {
