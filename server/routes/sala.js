@@ -161,6 +161,10 @@ app.get('/salas_alumno', verificaToken, (req, res) => {
 
     Room.find({ 'alumnos.id_alumno': req.usuario._id })
         .populate({
+            path: 'avisos.id_aviso',
+            model: 'Aviso'
+        })
+        .populate({
             path: 'tareas.id_tarea',
             model: 'Tarea'
         })
@@ -194,6 +198,10 @@ app.get('/salas_maestro', [verificaToken, verificaMaestroRole], (req, res) => {
 
 
     Room.find({ maestro: req.usuario._id })
+        .populate({
+            path: 'avisos.id_aviso',
+            model: 'Aviso'
+        })
         .populate({
             path: 'tareas.id_tarea',
             model: 'Tarea'
@@ -569,9 +577,15 @@ app.get('/tareas_terminadas/:tarea_id', [verificaToken, verificaMaestroRole], (r
 
 /////////////////////// Avisos //////////////////////////////////
 
-app.post('/aviso', [verificaToken, verificaMaestroRole], (req, res) => {
+// --------------------------------------------------------------
+// Crear un aviso
+// --------------------------------------------------------------
+
+app.post('/aviso/:id_sala', [verificaToken, verificaMaestroRole], (req, res) => {
 
     let body = req.body;
+
+    let id_sala = req.params.id_sala;
 
     let fecha = new Date().toISOString().substring(0, 10);
 
@@ -584,6 +598,110 @@ app.post('/aviso', [verificaToken, verificaMaestroRole], (req, res) => {
 
     aviso.save((err, aviso) => {
 
+        if (err) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
+
+        Room.findByIdAndUpdate(id_sala, { $push: { avisos: { id_aviso: aviso._id } } }, (err, aviso) => {
+
+            if (aviso.maestro != req.usuario._id) {
+                return res.status(401).json({
+                    ok: false,
+                    err: {
+                        message: 'No tienes permiso para acceder a las funciones de esta clase'
+                    }
+                });
+            }
+
+            if (err) return res.status(400).json({
+                ok: false,
+                err
+            });
+
+            res.json({
+                ok: true,
+                sala: aviso
+            });
+        });
+    });
+});
+
+// --------------------------------------------------
+// Editar un aviso
+// --------------------------------------------------
+
+app.put('/aviso/:aviso_id', [verificaToken, verificaMaestroRole], (req, res) => {
+
+    let aviso_id = req.params.aviso_id;
+    let body = req.body;
+    let update = _.pick(body, ['titulo', 'descripcion']);
+
+    Aviso.findByIdAndUpdate(aviso_id, update, { new: true, runValidators: true }, (err, aviso) => {
+
+        if (aviso.maestro != req.usuario._id) {
+            return res.status(401).json({
+                ok: false,
+                err: {
+                    message: 'No tienes permiso para acceder a las funciones de esta clase'
+                }
+            });
+        }
+
+        if (err) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
+
+        res.json({
+            ok: true,
+            aviso
+        });
+    });
+});
+
+// -----------------------------------------------------------
+// Borrar un aviso. Solo el maestro a cargo podrá hacer esto
+// -----------------------------------------------------------
+
+app.delete('/aviso/:aviso_id/:sala_id', [verificaToken, verificaMaestroRole], (req, res) => {
+
+    let aviso_id = req.params.aviso_id;
+    let sala_id = req.params.sala_id;
+
+    Room.findByIdAndUpdate(sala_id, { $pull: { avisos: { id_aviso: aviso_id } } }, (err, sala) => {
+
+        if (sala.maestro != req.usuario._id) {
+            return res.status(401).json({
+                ok: false,
+                err: {
+                    message: 'No tienes permiso para acceder a funciones de esta clase'
+                }
+            });
+        }
+
+        if (err) {
+            return res.status(400)
+        }
+
+        Aviso.findByIdAndRemove(aviso_id, (err, aviso) => {
+
+            if (err) {
+                return res.status(400).json({
+                    ok: false,
+                    err
+                });
+            }
+
+            res.json({
+                ok: true,
+                aviso
+            });
+        });
     });
 });
 
