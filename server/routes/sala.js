@@ -18,7 +18,7 @@ const fs = require('fs');
 /// Crear una nueva sala, Solo maestros o administradores tienen acceso a esta funcion
 /// ---------------------------------------------------------------------------------
 
-app.post('/room', [verificaToken, verificaMaestroRole || verificaAdminRole], (req, res) => {
+app.post('/room', [verificaToken, verificaMaestroRole], (req, res) => {
 
     let body = req.body;
     let usuario_id = req.usuario._id;

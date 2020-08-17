@@ -2,6 +2,10 @@
 const express = require('express');
 const app = express();
 
+// Http
+const http = require('http');
+const server = http.createServer(app);
+
 /// Configuración cors
 const cors = require('cors');
 app.use(cors());
@@ -20,6 +24,11 @@ app.use(bodyParser.json());
 app.use(require('./routes/usuario'));
 app.use(require('./routes/login'));
 app.use(require('./routes/sala'));
+app.use(require('./sockets/socket'));
+
+// Sockets
+const socketio = require('socket.io');
+module.exports.io = socketio(server);
 
 /// Configs
 
@@ -41,7 +50,7 @@ mongoose.connect(process.env.URLDB, {
 // Server
 app.use(express.static(publicPath));
 
-app.listen(process.env.PORT, (err) => {
+server.listen(process.env.PORT, (err) => {
 
     if (err) {
         throw new Error(err);
