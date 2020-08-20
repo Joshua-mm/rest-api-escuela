@@ -5,8 +5,8 @@ myVideo.muted = true;
 
 var peer = new Peer(undefined, {
     path: '/peerjs',
-    host: '/', // localhost:3000
-    port: '3000'
+    host: 'http://api-rest-escuela.herokuapp.com/', // localhost:3000
+    port: '80'
 });
 
 let myVideoStream;
