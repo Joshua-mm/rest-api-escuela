@@ -1,7 +1,5 @@
-var params = new URLSearchParams(window.location.search);
-
-var nombre = params.get('nombre');
-var sala = params.get('sala');
+var nombre = process.env.NOMBRE;
+var sala = process.env.SALA;
 
 var divUsuarios = $('#divUsuarios');
 var formEnviar = $('#formEnviar');

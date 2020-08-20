@@ -25,6 +25,7 @@ app.use(require('./routes/usuario'));
 app.use(require('./routes/login'));
 app.use(require('./routes/sala'));
 app.use(require('./sockets/socket'));
+app.use(require('./sockets/zoom'));
 
 // Sockets
 const socketio = require('socket.io');

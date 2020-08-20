@@ -7,6 +7,11 @@ const { Usuarios } = require('../classes/usuario');
 const { crearMensaje } = require('../utils/utilidades');
 const usuarios = new Usuarios();
 const Chat = require('../models/chat.model');
+const { find } = require('../models/usuario.model');
+
+process.env.NOMBRE;
+process.env.SALA;
+
 
 
 app.get('/chat', verificaToken, (req, res) => {
@@ -15,10 +20,10 @@ app.get('/chat', verificaToken, (req, res) => {
 
     let usuarioToken = req.usuario;
 
-    Usuario.find({ _id: usuarioToken._id })
+    Usuario.findById(usuarioToken._id)
         .populate({
             path: 'salas.id_sala',
-            model: 'Sala'
+            model: 'Room'
         })
         .exec((err, usuario) => {
             if (err) {
@@ -28,59 +33,56 @@ app.get('/chat', verificaToken, (req, res) => {
                 });
             }
 
-            const usuariosDB = usuario;
-        });
+            let nombreSala = usuario.salas[1].id_sala.nombre;
 
-    console.log(usuariosDB);
-    return;
+            const { io } = require('../server');
+            io.on('connection', (client) => {
 
-    const { io } = require('../server');
-    io.on('connection', (client) => {
+                client.on('entrarChat', (usuario, callback) => {
 
-        client.on('entrarChat', (usuario, callback) => {
+                    client.join(nombreSala);
+                    usuarios.addPersona(req.usuario._id, req.usuario.nombre, nombreSala);
 
+                    client.broadcast.to(nombreSala).emit('listaPersona', usuarios.getPersonasPorSala(nombreSala));
+                    client.broadcast.to(nombreSala).emit('crearMensaje', crearMensaje('Administrador', `${ req.usuario.nombre } se ha unido al chat.`));
+                    callback(usuarios.getPersonasPorSala(nombreSala));
+                });
 
+                client.on('crearMensaje', (data, callback) => {
 
-            client.join(usuario.sala);
-            usuarios.addPersona(client.id, usuario.nombre, usuario.sala);
+                    console.log(data);
 
-            client.broadcast.to(usuario.sala).emit('listaPersona', usuarios.getPersonasPorSala(usuario.sala));
-            client.broadcast.to(usuario.sala).emit('crearMensaje', crearMensaje('Administrador', `${ usuario.nombre } se ha unido al chat.`));
-            callback(usuarios.getPersonasPorSala(usuario.sala));
-        });
+                    let fecha = new Date();
+                    let hora = fecha.getHours() + ':' + fecha.getMinutes();
 
-        client.on('crearMensaje', (data, callback) => {
+                    let persona = usuarios.getPersona(req.usuario._id);
 
-            console.log(data);
+                    let mensaje = crearMensaje(req.usuario.nombre, data.mensaje);
 
-            let fecha = new Date();
-            let hora = fecha.getHours() + ':' + fecha.getMinutes();
+                    client.broadcast.to(nombreSala).emit('crearMensaje', mensaje);
 
-            let persona = usuarios.getPersona(client.id);
+                    let dataMensaje = new Chat({
+                        sala: nombreSala,
+                        nombre: req.usuario.nombre,
+                        mensaje: data.mensaje,
+                        hora
+                    });
 
-            let mensaje = crearMensaje(persona.nombre, data.mensaje);
+                    process.env.NOMBRE = req.usuario.nombre;
+                    process.env.SALA = nombreSala;
+                    console.log(dataMensaje);
+                    callback(mensaje);
+                });
 
-            client.broadcast.to(data.sala).emit('crearMensaje', mensaje);
+                client.on('disconnect', () => {
 
-            let dataMensaje = new Chat({
-                sala: data.sala,
-                nombre: persona.nombre,
-                mensaje: data.mensaje,
-                hora
+                    let persona = usuarios.borrarPersona(req.usuario._id);
+                    client.broadcast.to(nombreSala).emit('crearMensaje', crearMensaje('Administrador', `${ req.usuario.nombre } abandonó el chat.`));
+                    client.broadcast.to(nombreSala).emit('listaPersona', usuarios.getPersonasPorSala(nombreSala));
+                });
             });
 
-            console.log(dataMensaje);
-            callback(mensaje);
         });
-
-        client.on('disconnect', () => {
-
-            let persona = usuarios.borrarPersona(client.id);
-            client.broadcast.to(persona.sala).emit('crearMensaje', crearMensaje('Administrador', `${ persona.nombre } abandonó el chat.`));
-            client.broadcast.to(persona.sala).emit('listaPersona', usuarios.getPersonasPorSala(persona.sala));
-        });
-    });
-
 });
 
 module.exports = app;
